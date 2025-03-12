@@ -10,6 +10,8 @@
 
 ### Bugfixes
 
+- [\#156](https://github.com/arkworks-rs/r1cs-std/pull/156) Don't panic on an empty sum in `AlocatedFp::add_many`.
+
 ## v0.5.0
 
 ### Breaking changes

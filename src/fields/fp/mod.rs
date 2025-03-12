@@ -165,9 +165,10 @@ impl<F: PrimeField> AllocatedFp<F> {
         let mut has_value = true;
         let mut value = F::zero();
         let mut new_lc = lc!();
+        let mut empty_sum = true;
 
-        let mut num_iters = 0;
         for variable in iter {
+            empty_sum = false;
             let variable = variable.borrow();
             if !variable.cs.is_none() {
                 cs = cs.or(variable.cs.clone());
@@ -178,9 +179,11 @@ impl<F: PrimeField> AllocatedFp<F> {
                 value += variable.value.unwrap();
             }
             new_lc = new_lc + variable.variable;
-            num_iters += 1;
         }
-        assert_ne!(num_iters, 0);
+
+        if empty_sum {
+            return AllocatedFp::new(Some(F::zero()), Variable::Zero, ConstraintSystemRef::None);
+        }
 
         let variable = cs.new_lc(new_lc).unwrap();
 
@@ -1121,6 +1124,7 @@ impl<'a, F: PrimeField> Sum<FpVar<F>> for FpVar<F> {
 
 #[cfg(test)]
 mod test {
+    use super::AllocatedFp;
     use crate::{
         alloc::{AllocVar, AllocationMode},
         eq::EqGadget,
@@ -1130,6 +1134,7 @@ mod test {
     use ark_relations::r1cs::ConstraintSystem;
     use ark_std::{UniformRand, Zero};
     use ark_test_curves::bls12_381::Fr;
+    use std::iter;
 
     #[test]
     fn test_sum_fpvar() {
@@ -1160,5 +1165,11 @@ mod test {
 
         assert!(cs.is_satisfied().unwrap());
         assert_eq!(sum.value().unwrap(), sum_expected);
+    }
+
+    #[test]
+    fn test_add_many_none() {
+        type F = ark_test_curves::bls12_381::Fq;
+        let _ = AllocatedFp::<F>::add_many(iter::empty::<AllocatedFp<F>>());
     }
 }
